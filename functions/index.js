@@ -80,11 +80,11 @@ exports.videoInfo = functions.https.onRequest((req, res) => {
       if (err) throw err;
       console.log(info.formats);
       var links = [];
-      var qualitites = [];
+      var qualities = [];
       for( var i= 0; i < info.formats.length; i++) {
         var quality = info.formats[i].qualityLabel;
-        if(!qualitites.includes(quality) && quality !== null){
-          qualitites.push(quality);
+        if(!qualities.includes(quality) && quality !== null){
+          qualities.push(quality);
         }
       }
       response = {
@@ -94,7 +94,7 @@ exports.videoInfo = functions.https.onRequest((req, res) => {
         backup_thumbnail: `https://img.youtube.com/vi/${info.video_id}/maxresdefault.jpg`,
         video_length: info.length_seconds,
         uploader: info.author,
-        available_qualitites: qualitites
+        available_qualities: qualities
       }
       res.send(
         response
