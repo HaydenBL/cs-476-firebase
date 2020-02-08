@@ -49,48 +49,26 @@ exports.makeUppercase = functions.database.ref('/messages/{pushId}/original')
 });
 
 exports.videoDownload = functions.https.onRequest((req, res) => {
-  var URL = req.query.URL;
-  console.log(URL);
-  // var info = ytdl.getInfo(URL);
-  // ytdl.downloadFromInfo(info);
+  cors(req, res, () => {
+    var URL = req.query.URL;
+    var quality = req.query.quality;
 
-  // var stream = ytdl(URL)
-
-  
-  // res.header('Content-Disposition', 'attachment; filename="video.mp4"');
-  // ytdl(URL, {format: 'mp4', quality: 'lowest'}).pipe(res);
-  // res.send();
-
-  var links = []
-  ytdl(URL, {format: 'mp4', quality: 'lowest'}).on(err, err => {
-    err.formats
-  })
-
-  ytdl(URL, {format: 'mp4', quality: 'lowest'}, function(err, format) {
-    if (err) {res.send('the url is invalid please try again...');}
-    console.log((format.formats).length);//i am getting value... in console but not outside of the function.. 
-    //this object contains all the download links  
-    for( var i= 0, len = (format.formats).length; i < len; i++) {
-      var el = format.formats[i].container;
-      if ( el === 'mp4') {
-        console.log(format.formats[i]);
-        var download_url = format.formats[i];
-        //this push will store the all links in 'links' object..
-        links.push(download_url);
+    ytdl.getInfo(URL, (err, info) => {
+      if (err) throw err;
+      var link;
+      for( var i= 0; i < info.formats.length; i++) {
+        if(info.formats[i].qualityLabel === quality && info.formats[i].audioChannels > 0){
+          link = info.formats[i].url;
+        }
       }
-    }
-  });
-  console.log(links);
-  res.send(links);
-
-
-  // var stream = ytdl(URL, {quality: 'lowest', filter: format => format.container === 'mp4'}).  .on("response", response => {
-  //   // If you want to set size of file in header
-  //   res.setHeader("content-length", response.headers["content-length"]);
-  // })
-  // .pipe(res);
-  // res.download()
-  // res.send(stream);
+      response = {
+        download_url: link
+      }
+      res.send(
+        response
+      );
+    })
+  })
 })
 
 exports.videoInfo = functions.https.onRequest((req, res) => {
@@ -100,19 +78,27 @@ exports.videoInfo = functions.https.onRequest((req, res) => {
 
     ytdl.getInfo(URL, (err, info) => {
       if (err) throw err;
+      console.log(info.formats);
+      var links = [];
+      var qualitites = [];
+      for( var i= 0; i < info.formats.length; i++) {
+        var quality = info.formats[i].qualityLabel;
+        if(!qualitites.includes(quality) && quality !== null){
+          qualitites.push(quality);
+        }
+      }
       response = {
         title: info.title,
         id: info.video_id,
         thumbnail: info.player_response.videoDetails.thumbnail.thumbnails[info.player_response.videoDetails.thumbnail.thumbnails.length - 1].url,
         backup_thumbnail: `https://img.youtube.com/vi/${info.video_id}/maxresdefault.jpg`,
         video_length: info.length_seconds,
-        uploader: info.author
+        uploader: info.author,
+        available_qualitites: qualitites
       }
-      console.log(response);
       res.send(
         response
-      );
-    
+      );    
     })
-})
+  })
 })
